@@ -1,0 +1,30 @@
+<section class="phx-hero">
+  <div>
+    <p>Are you X or O?</p>
+
+    <form phx-change="choose_character">
+      <input name="choice" class="button" value="X" />
+      <input name="choice" class="button" value="O" />
+    </form>
+    <%= if @chosen_character != "" do %>
+      <p>You chose this character: <%= @chosen_character %></p>
+    <% end %>
+  </div>
+  <div class="container">
+    <p> Game Board </p>
+    <button phx-click="clear_game">Clear Game</button>
+    <form>
+      <table class="table is-bordered">
+        <tbody>
+          <%= for x <- 0..2 do %>
+            <tr>
+              <%= for y <- 0..2 do %>
+                  <td><button phx-click="game_move" value="<%= x %>_<%= y %>" class="button"><%= @board["#{x}_#{y}"] %></button></td>
+              <% end %>
+            </tr>
+          <% end %>
+        </tbody>
+      </table>
+    </form>
+  </div>
+</section>
