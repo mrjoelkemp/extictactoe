@@ -11,7 +11,8 @@
     <% end %>
   </div>
   <div class="container">
-    <p> Game Board </p>
+    <p> Game Board  <%= if @game_complete? == true, do: "(We have a winner!)" %></p>
+
     <button phx-click="clear_game">Clear Game</button>
     <form>
       <table class="table is-bordered">

@@ -4,11 +4,10 @@ defmodule TictactoeWeb.PageLive do
 
   @impl true
   def mount(_params, _session, socket) do
-    board = GameBoard.get_board()
-
     {:ok, assign(socket,
       chosen_character: "",
-      board: board)}
+      game_complete?: GameBoard.complete?,
+      board: GameBoard.get_board())}
   end
 
   # @impl true
@@ -20,15 +19,23 @@ defmodule TictactoeWeb.PageLive do
   def handle_event("game_move", %{"value" => position}, socket) do
     IO.inspect(position, label: "Move Position")
 
-    GameBoard.move("X", position)
+    if not GameBoard.complete? do
+      GameBoard.move("X", position)
+    end
 
-    {:noreply, assign(socket, board: GameBoard.get_board())}
+    {:noreply, assign(socket,
+      board: GameBoard.get_board(),
+      game_complete?: GameBoard.complete?
+      )}
   end
 
   @impl true
   def handle_event("clear_game", _value, socket) do
     GameBoard.clear()
 
-    {:noreply, assign(socket, board: GameBoard.get_board())}
+    {:noreply, assign(socket,
+      board: GameBoard.get_board(),
+      game_complete?: false
+    )}
   end
 end
