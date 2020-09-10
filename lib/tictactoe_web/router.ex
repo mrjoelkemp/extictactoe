@@ -10,20 +10,9 @@ defmodule TictactoeWeb.Router do
     plug :put_secure_browser_headers
   end
 
-  pipeline :api do
-    plug :accepts, ["json"]
-  end
+  pipe_through :browser
 
-  scope "/", TictactoeWeb do
-    pipe_through :browser
-
-    live "/", PageLive, :index
-  end
-
-  # Other scopes may use custom stacks.
-  # scope "/api", TictactoeWeb do
-  #   pipe_through :api
-  # end
+  live "/", TictactoeWeb.PageLive, :index
 
   # Enables LiveDashboard only for development
   #
@@ -35,9 +24,6 @@ defmodule TictactoeWeb.Router do
   if Mix.env() in [:dev, :test] do
     import Phoenix.LiveDashboard.Router
 
-    scope "/" do
-      pipe_through :browser
-      live_dashboard "/dashboard", metrics: TictactoeWeb.Telemetry
-    end
+    live_dashboard "/dashboard", metrics: TictactoeWeb.Telemetry
   end
 end

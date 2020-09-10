@@ -13,7 +13,8 @@ defmodule Tictactoe.Application do
       {Phoenix.PubSub, name: Tictactoe.PubSub},
       # Start the Endpoint (http/https)
       TictactoeWeb.Endpoint,
-      TicTacToe.GameBoard
+      Tictactoe.Game,
+      Tictactoe.Presence
     ]
 
     # See https://hexdocs.pm/elixir/Supervisor.html

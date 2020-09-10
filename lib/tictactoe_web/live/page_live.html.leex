@@ -11,16 +11,17 @@
     <% end %>
   </div>
   <div class="container">
-    <p> Game Board  <%= if @game_complete? == true, do: "(We have a winner!)" %></p>
+    <p> Game Board  <%= if @game.complete? == true, do: "(We have a winner!)" %></p>
 
-    <button phx-click="clear_game">Clear Game</button>
+    <button class="button" phx-click="clear_board">Clear Board</button>
+    <button class="button" phx-click="reset_game">Reset Game</button>
     <form>
       <table class="table is-bordered">
         <tbody>
           <%= for x <- 0..2 do %>
             <tr>
               <%= for y <- 0..2 do %>
-                  <td><button phx-click="game_move" value="<%= x %>_<%= y %>" class="button"><%= @board["#{x}_#{y}"] %></button></td>
+                  <td><button phx-click="game_move" value="<%= x %>_<%= y %>" class="button"><%= Map.get(@game.board, :"#{x}_#{y}") %></button></td>
               <% end %>
             </tr>
           <% end %>
