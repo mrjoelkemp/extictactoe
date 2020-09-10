@@ -21,7 +21,15 @@
           <%= for x <- 0..2 do %>
             <tr>
               <%= for y <- 0..2 do %>
-                  <td><button phx-click="game_move" value="<%= x %>_<%= y %>" class="button"><%= Map.get(@game.board, :"#{x}_#{y}") %></button></td>
+                  <td>
+                    <button
+                      phx-click="game_move"
+                      value="<%= x %>_<%= y %>" class="button"
+                      <%= if Map.get(@game.board, :"#{x}_#{y}") != "", do: "disabled" %>
+                    >
+                      <%= Map.get(@game.board, :"#{x}_#{y}") %>
+                    </button>
+                  </td>
               <% end %>
             </tr>
           <% end %>
