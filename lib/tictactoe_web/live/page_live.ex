@@ -1,6 +1,6 @@
 defmodule TictactoeWeb.PageLive do
   use TictactoeWeb, :live_view
-  alias Tictactoe.{Game, Game.Player}
+  alias Tictactoe.{Game, Game.Player, Game.BroadcastedMove}
   require Logger
 
   # TODO: Stop using the csrf token and use another cookie session id
@@ -15,6 +15,7 @@ defmodule TictactoeWeb.PageLive do
 
     if connected?(socket) do
       IO.puts("Load player state")
+      Game.subscribe_for_updates()
       send(self(), {:load_player_state, session_id})
     end
 
@@ -51,6 +52,16 @@ defmodule TictactoeWeb.PageLive do
     end
   end
 
+  def handle_info({:move, %BroadcastedMove{player: player, position: position}}, socket) do
+    Game.move(player, position)
+
+    {:noreply,
+     assign(
+       socket,
+       game: Game.get_game()
+     )}
+  end
+
   @impl true
   def handle_event("choose_character", %{"choice" => choice}, socket) do
     IO.puts("Chosen character: #{choice}")
@@ -61,8 +72,11 @@ defmodule TictactoeWeb.PageLive do
   def handle_event("game_move", %{"value" => position}, socket) do
     IO.inspect(position, label: "Move Position")
 
+    player = socket.assigns.player
+
     if not Game.complete?() do
-      Game.move(socket.assigns.player, position)
+      Game.move(player, position)
+      Game.broadcast_move(player, position)
     end
 
     {:noreply,

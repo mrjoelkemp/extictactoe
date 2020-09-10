@@ -4,11 +4,16 @@ defmodule Tictactoe.Game do
   """
   use Agent
   alias Tictactoe.GameBoard
+  alias Tictactoe.PubSub
   require Logger
   alias __MODULE__
 
   defmodule Player do
     defstruct number: nil, character: ""
+  end
+
+  defmodule BroadcastedMove do
+    defstruct player: struct(Player), position: nil
   end
 
   # TODO: Make game id dynamic and not a singleton
@@ -121,7 +126,7 @@ defmodule Tictactoe.Game do
     move(player, String.to_atom(position))
   end
 
-  @spec move(%Player{}, atom()) :: %Game{}
+  @spec move(%Player{}, atom()) :: :ok
   def move(player, position) when is_atom(position) do
     Agent.update(__MODULE__, fn %Game{board: board, complete?: game_complete?} = state ->
       cond do
@@ -142,8 +147,17 @@ defmodule Tictactoe.Game do
           %Game{state | board: new_board, complete?: GameBoard.complete?(new_board)}
       end
     end)
+  end
 
-    get_game()
+  @spec broadcast_move(%Player{}, atom) :: :ok | {:error, term}
+  def broadcast_move(player, position) do
+    %Game{id: id} = get_game()
+
+    Phoenix.PubSub.broadcast(
+      PubSub,
+      "game:#{id}",
+      {:move, %BroadcastedMove{player: player, position: position}}
+    )
   end
 
   @doc """
@@ -153,6 +167,11 @@ defmodule Tictactoe.Game do
   def lookup_player(session_id) do
     %Game{player_lookup: player_lookup} = get_game()
     Map.get(player_lookup, session_id)
+  end
+
+  def subscribe_for_updates() do
+    %Game{id: id} = get_game()
+    Phoenix.PubSub.subscribe(PubSub, "game:#{id}")
   end
 
   @doc """
