@@ -5,15 +5,17 @@ defmodule TictactoeWeb.PageLive do
 
   # TODO: Stop using the csrf token and use another cookie session id
   @impl true
-  def mount(_params, %{"_csrf_token" => session_id}, socket) do
+  def mount(_params, session, socket) do
     IO.inspect(socket.assigns, label: "\nSocket assigns")
 
     IO.puts("My pid: #{inspect(self())}")
-    IO.puts("Session id: #{session_id}")
-    IO.puts("Game State: #{inspect(Game.get_game())}")
     IO.puts("Socket connected? #{inspect(connected?(socket))}")
 
     if connected?(socket) do
+      %{"_csrf_token" => session_id} = session
+      IO.puts("Session id: #{session_id}")
+      IO.puts("Game State: #{inspect(Game.get_game())}")
+
       IO.puts("Load player state")
       Game.subscribe_for_updates()
       send(self(), {:load_player_state, session_id})
@@ -52,8 +54,9 @@ defmodule TictactoeWeb.PageLive do
     end
   end
 
-  def handle_info({:move, %BroadcastedMove{player: player, position: position}}, socket) do
-    Game.move(player, position)
+  def handle_info({:move, _move_data}, socket) do
+    # There is no need to update the game state here since it's shared with the other players
+    # The one who makes the move updates the game state
 
     {:noreply,
      assign(
