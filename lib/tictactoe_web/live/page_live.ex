@@ -1,6 +1,6 @@
 defmodule TictactoeWeb.PageLive do
   use TictactoeWeb, :live_view
-  alias Tictactoe.{Game, Game.Player, Game.BroadcastedMove}
+  alias Tictactoe.{GameBoard, GameClient, Game, Game.Player}
   require Logger
 
   # TODO: Stop using the csrf token and use another cookie session id
@@ -11,31 +11,36 @@ defmodule TictactoeWeb.PageLive do
     IO.puts("My pid: #{inspect(self())}")
     IO.puts("Socket connected? #{inspect(connected?(socket))}")
 
+    # TODO: Eventually, we should just fetch the game by id
+    game_pid = Process.whereis(Tictactoe.Game)
+
     if connected?(socket) do
       %{"_csrf_token" => session_id} = session
       IO.puts("Session id: #{session_id}")
-      IO.puts("Game State: #{inspect(Game.get_game())}")
+      IO.puts("Game State: #{inspect(GameClient.get_game(game_pid))}")
 
       IO.puts("Load player state")
-      Game.subscribe_for_updates()
+      GameClient.subscribe_for_updates(game_pid)
       send(self(), {:load_player_state, session_id})
     end
 
     {:ok,
      assign(socket,
-       chosen_character: "",
-       game: Game.get_game(),
+       game_pid: game_pid,
+       game: GameClient.get_game(game_pid),
        player: %Player{}
      )}
   end
 
   @impl true
   def handle_info({:load_player_state, session_id}, socket) do
+    game_pid = socket.assigns.game_pid
+
     result =
-      case Game.lookup_player(session_id) do
+      case GameClient.lookup_player(game_pid, session_id) do
         nil ->
           Logger.debug("Creating a new player")
-          Game.add_player(session_id)
+          GameClient.add_player(game_pid, session_id)
 
         %Player{} = player ->
           Logger.debug("Player was already in the game")
@@ -54,21 +59,12 @@ defmodule TictactoeWeb.PageLive do
     end
   end
 
-  def handle_info({:move, _move_data}, socket) do
-    # There is no need to update the game state here since it's shared with the other players
-    # The one who makes the move updates the game state
-
+  def handle_info(:game_updated, socket) do
     {:noreply,
      assign(
        socket,
-       game: Game.get_game()
+       game: GameClient.get_game(socket.assigns.game_pid)
      )}
-  end
-
-  @impl true
-  def handle_event("choose_character", %{"choice" => choice}, socket) do
-    IO.puts("Chosen character: #{choice}")
-    {:noreply, socket}
   end
 
   @impl true
@@ -76,36 +72,60 @@ defmodule TictactoeWeb.PageLive do
     IO.inspect(position, label: "Move Position")
 
     player = socket.assigns.player
+    game_pid = socket.assigns.game_pid
 
-    if not Game.complete?() do
-      Game.move(player, position)
-      Game.broadcast_move(player, position)
+    if not GameClient.complete?(game_pid) do
+      GameClient.move(game_pid, player, position)
+      GameClient.notify_others(game_pid)
     end
 
     {:noreply,
      assign(socket,
-       game: Game.get_game()
+       game: GameClient.get_game(game_pid)
      )}
   end
 
   @impl true
   def handle_event("clear_board", _value, socket) do
-    Game.clear_board()
+    game_pid = socket.assigns.game_pid
+    GameClient.clear_board(game_pid)
 
     {:noreply,
      assign(socket,
-       game: Game.get_game()
+       game: GameClient.get_game(game_pid)
      )}
   end
 
   @impl true
   def handle_event("reset_game", _value, socket) do
     Logger.debug("Resetting the game")
-    Game.reset()
+    game_pid = socket.assigns.game_pid
+    GameClient.reset(game_pid)
 
     {:noreply,
      socket
      |> clear_flash(:error)
-     |> assign(game: Game.get_game())}
+     |> assign(game: GameClient.get_game(game_pid))}
+  end
+
+  @spec board_has_move_here?(%GameBoard{}, number, number) :: boolean
+  def board_has_move_here?(%GameBoard{} = board, x_pos, y_pos) do
+    Map.get(board, :"#{x_pos}_#{y_pos}") != ""
+  end
+
+  def is_winning_move?(%Game{} = game, x_pos, y_pos) do
+    GameClient.is_winning_move?(game, x_pos, y_pos)
+  end
+
+  def your_turn?(_socket) do
+    # %Player{is_my_turn?: is_my_turn?} = socket.assigns.player
+    # is_my_turn?
+
+    # TODO: Replace this when we have the state machine that dictates whose turn it is
+    true
+  end
+
+  def you_won?(%Game{} = game, %Player{} = player) do
+    game.win_state.player == player
   end
 end

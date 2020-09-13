@@ -1,31 +1,40 @@
-<section class="phx-hero">
-  <div>
-    <p>Are you X or O?</p>
+<section class="hero">
+  <div class="hero-body has-text-centered">
+    <p class="title">Welcome to tictactoe!</p>
 
-    <form phx-change="choose_character">
-      <input name="choice" class="button" value="X" />
-      <input name="choice" class="button" value="O" />
-    </form>
-    <%= if @chosen_character != "" do %>
-      <p>You chose this character: <%= @chosen_character %></p>
+    <%= if @player !== %Player{} do %>
+      You are playing as <%= @player.character %>
+    <% else %>
+      <p>Loading your player information...</p>
     <% end %>
   </div>
+</section>
+<section class="section">
   <div class="container">
-    <p> Game Board  <%= if @game.complete? == true, do: "(We have a winner!)" %></p>
+    <div class="has-text-centered">
+      <%= if @game.complete? do %>
+        <p><%= if you_won?(@game, @player), do: "You won!!", else: "You Lost :("%></p>
+      <% end %>
+    </div>
 
-    <button class="button" phx-click="clear_board">Clear Board</button>
-    <button class="button" phx-click="reset_game">Reset Game</button>
+    <div class="container has-text-centered">
+      <button class="button" phx-click="clear_board">Clear Board</button>
+      <button class="button" phx-click="reset_game">Reset Game</button>
+    </div>
     <form>
       <table class="table is-bordered">
         <tbody>
           <%= for x <- 0..2 do %>
             <tr>
               <%= for y <- 0..2 do %>
-                  <td>
+                  <td
+                    class=<%= if @game != %Game{} and is_winning_move?(@game, x, y), do: "is-warning" %>
+                  >
                     <button
                       phx-click="game_move"
-                      value="<%= x %>_<%= y %>" class="button"
-                      <%= if Map.get(@game.board, :"#{x}_#{y}") != "", do: "disabled" %>
+                      value="<%= x %>_<%= y %>"
+                      class="button"
+                      <%= if @game != %Game{} and board_has_move_here?(@game.board, x, y) or not your_turn?(@socket), do: "disabled" %>
                     >
                       <%= Map.get(@game.board, :"#{x}_#{y}") %>
                     </button>
