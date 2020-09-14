@@ -39,6 +39,14 @@ defmodule Tictactoe.GameBoard do
     key
   end
 
+  @spec has_move_here?(%GameBoard{}, number, number) :: boolean
+  def has_move_here?(%GameBoard{} = board, x_pos, y_pos) do
+    pos = get_position_from_coordinates(x_pos, y_pos)
+    # We know the pos has to be a valid board position,
+    # but defaulting missing keys to "" this is just in case
+    Map.get(board, pos, "") != ""
+  end
+
   @spec complete?(%GameBoard{}) :: boolean()
   def complete?(board) do
     has_winner?(board)

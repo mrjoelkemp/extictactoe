@@ -108,15 +108,6 @@ defmodule TictactoeWeb.PageLive do
      |> assign(game: GameClient.get_game(game_pid))}
   end
 
-  @spec board_has_move_here?(%GameBoard{}, number, number) :: boolean
-  def board_has_move_here?(%GameBoard{} = board, x_pos, y_pos) do
-    Map.get(board, :"#{x_pos}_#{y_pos}") != ""
-  end
-
-  def is_winning_move?(%Game{} = game, x_pos, y_pos) do
-    GameClient.is_winning_move?(game, x_pos, y_pos)
-  end
-
   def your_turn?(_socket) do
     # %Player{is_my_turn?: is_my_turn?} = socket.assigns.player
     # is_my_turn?

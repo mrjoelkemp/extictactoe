@@ -28,13 +28,13 @@
             <tr>
               <%= for y <- 0..2 do %>
                   <td
-                    class=<%= if @game != %Game{} and is_winning_move?(@game, x, y), do: "is-warning" %>
+                    class=<%= if @game != %Game{} and Game.is_winning_move?(@game, x, y), do: "is-warning" %>
                   >
                     <button
                       phx-click="game_move"
                       value="<%= x %>_<%= y %>"
                       class="button"
-                      <%= if @game != %Game{} and board_has_move_here?(@game.board, x, y) or not your_turn?(@socket), do: "disabled" %>
+                      <%= if @game != %Game{} and GameBoard.has_move_here?(@game.board, x, y) or not your_turn?(@socket), do: "disabled" %>
                     >
                       <%= Map.get(@game.board, :"#{x}_#{y}") %>
                     </button>

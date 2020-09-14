@@ -11,62 +11,6 @@ defmodule Tictactoe.GameClient do
   alias Tictactoe.GameBoard
   alias Tictactoe.PubSub
 
-  @spec get_available_player_number(%Game{}) :: {:ok, number} | {:error, binary}
-  def get_available_player_number(%Game{} = game) do
-    players = get_player_list(game)
-
-    player_1_exists? = any_players_have_this_number?(players, 1)
-    player_2_exists? = any_players_have_this_number?(players, 2)
-
-    cond do
-      player_1_exists? && player_2_exists? ->
-        {:error, "No room for another player"}
-
-      player_1_exists? ->
-        {:ok, 2}
-
-      true ->
-        {:ok, 1}
-    end
-  end
-
-  @spec get_available_character(%Game{}) :: {:ok, binary} | {:error, binary}
-  defp get_available_character(%Game{} = game) do
-    players = get_player_list(game)
-
-    x_taken? = any_players_have_this_character?(players, Game.x())
-    o_taken? = any_players_have_this_character?(players, Game.o())
-
-    cond do
-      x_taken? && o_taken? ->
-        {:error, "No other available characters"}
-
-      x_taken? ->
-        {:ok, Game.o()}
-
-      true ->
-        {:ok, Game.x()}
-    end
-  end
-
-  @spec get_player_list(%Game{}) :: [%Player{}]
-  defp get_player_list(%Game{} = game) do
-    game.player_lookup
-    |> Map.values()
-  end
-
-  @spec any_players_have_this_number?([%Player{}], number) :: boolean
-  defp any_players_have_this_number?(players, number) do
-    players
-    |> Enum.any?(fn player -> player.number == number end)
-  end
-
-  @spec any_players_have_this_character?([%Player{}], binary) :: boolean
-  defp any_players_have_this_character?(players, character) do
-    players
-    |> Enum.any?(fn player -> player.character == character end)
-  end
-
   @doc """
   See if there is already a player in the game for the given session
   """
@@ -80,24 +24,11 @@ defmodule Tictactoe.GameClient do
   def add_player(game_pid, session_id) when is_binary(session_id) do
     game = get_game(game_pid)
 
-    with(
-      {:ok, player_number} <- get_available_player_number(game),
-      {:ok, character} <- get_available_character(game)
-    ) do
-      new_player = %Player{
-        number: player_number,
-        character: character
-      }
+    case Game.add_player(game, session_id) do
+      %Game{} = updated_game ->
+        Agent.update(game_pid, fn _ -> updated_game end)
+        Game.get_player(updated_game, session_id)
 
-      Agent.update(game_pid, fn game_state ->
-        %Game{
-          game_state
-          | player_lookup: Map.put(game_state.player_lookup, session_id, new_player)
-        }
-      end)
-
-      new_player
-    else
       err ->
         err
     end
@@ -132,7 +63,7 @@ defmodule Tictactoe.GameClient do
 
           win_state =
             if complete? do
-              get_win_state(new_game_state)
+              Game.get_win_state(new_game_state)
             else
               %WinState{}
             end
@@ -140,28 +71,6 @@ defmodule Tictactoe.GameClient do
           Map.put(new_game_state, :win_state, win_state)
       end
     end)
-  end
-
-  @spec get_win_state(%Game{}) :: %WinState{}
-  def get_win_state(%Game{board: board} = game) do
-    %GameBoard.WinState{character: character, moves: moves} = GameBoard.get_winning_state(board)
-
-    winning_player =
-      get_player_list(game)
-      |> Enum.find(fn player -> player.character == character end)
-
-    # Lookup table with the position as the key and true as the value
-    # Useful for the rendered buttons to check if the position they represent
-    # is a winning state
-    moves_lookup =
-      moves
-      |> Enum.map(&{&1, true})
-      |> Enum.into(%{})
-
-    %WinState{
-      player: winning_player,
-      moves_lookup: moves_lookup
-    }
   end
 
   def notify_others(game_pid) do
@@ -196,16 +105,25 @@ defmodule Tictactoe.GameClient do
   """
   @spec clear_board(pid) :: :ok
   def clear_board(game_pid) do
-    Agent.update(game_pid, fn game -> %Game{game | board: %GameBoard{}, complete?: false} end)
+    updated_game =
+      get_game(game_pid)
+      |> Game.clear_board()
+
+    Agent.update(game_pid, fn _ -> updated_game end)
     notify_others(game_pid)
     :ok
   end
 
   @doc """
-  Reset the entire game state (nuking all players and the board)
+  Reset the entire game state, keeping the connected players
   """
+  @spec reset(pid) :: :ok
   def reset(game_pid) do
-    Agent.update(game_pid, fn _ -> %Game{} end)
+    updated_game =
+      get_game(game_pid)
+      |> Game.reset()
+
+    Agent.update(game_pid, fn _ -> updated_game end)
     notify_others(game_pid)
     :ok
   end
@@ -226,20 +144,5 @@ defmodule Tictactoe.GameClient do
   """
   def get_board(game_pid) do
     Agent.get(game_pid, fn %Game{board: board} -> board end)
-  end
-
-  @doc """
-  Whether or not the given coordinates represent a winning move in the game
-
-  This doesn't take in a pid since it's being called from a view that has the data already
-  """
-  @spec is_winning_move?(%Game{}, number, number) :: boolean
-  def is_winning_move?(%Game{} = game, x_pos, y_pos) do
-    if game.complete? do
-      position = GameBoard.get_position_from_coordinates(x_pos, y_pos)
-      Map.get(game.win_state.moves_lookup, position) != nil
-    else
-      false
-    end
   end
 end
