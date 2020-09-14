@@ -36,7 +36,7 @@
                       class="button"
                       <%= if @game != %Game{} and GameBoard.has_move_here?(@game.board, x, y) or not your_turn?(@socket), do: "disabled" %>
                     >
-                      <%= Map.get(@game.board, :"#{x}_#{y}") %>
+                      <%= GameBoard.get_move(@game.board, x, y) %>
                     </button>
                   </td>
               <% end %>

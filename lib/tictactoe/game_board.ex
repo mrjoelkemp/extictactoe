@@ -47,6 +47,12 @@ defmodule Tictactoe.GameBoard do
     Map.get(board, pos, "") != ""
   end
 
+  @spec get_move(%GameBoard{}, number, number) :: binary
+  def get_move(%GameBoard{} = board, x_pos, y_pos) do
+    position = get_position_from_coordinates(x_pos, y_pos)
+    Map.get(board, position)
+  end
+
   @spec complete?(%GameBoard{}) :: boolean()
   def complete?(board) do
     has_winner?(board)

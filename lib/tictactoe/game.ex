@@ -74,7 +74,7 @@ defmodule Tictactoe.Game do
   end
 
   @spec get_available_player_number(%Game{}) :: {:ok, number} | {:error, binary}
-  def get_available_player_number(%Game{} = game) do
+  defp get_available_player_number(%Game{} = game) do
     players = get_player_list(game)
 
     player_1_exists? = any_players_have_this_number?(players, 1)
