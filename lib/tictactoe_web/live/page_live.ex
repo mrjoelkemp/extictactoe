@@ -68,7 +68,7 @@ defmodule TictactoeWeb.PageLive do
   end
 
   @impl true
-  def handle_event("game_move", %{"value" => position}, socket) do
+  def handle_event("game_move", %{"position" => position}, socket) do
     IO.inspect(position, label: "Move Position")
 
     player = socket.assigns.player

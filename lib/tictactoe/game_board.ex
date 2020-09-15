@@ -232,4 +232,24 @@ defmodule Tictactoe.GameBoard do
     |> Map.values()
     |> Enum.all?(&(&1 != ""))
   end
+
+  @spec get_board_config :: [any]
+  def get_board_config() do
+    positions = for x <- 0..2, y <- 0..2, do: {x, y}
+
+    Logger.debug("positions: #{inspect(positions)}")
+
+    0..(Enum.count(positions) - 1)
+    |> Enum.map(fn index ->
+      Logger.debug("coords: #{inspect(Enum.at(positions, index))}")
+
+      {x, y} = coords = Enum.at(positions, index)
+
+      %{
+        coords: coords,
+        index: index,
+        position: get_position_from_coordinates(x, y)
+      }
+    end)
+  end
 end
