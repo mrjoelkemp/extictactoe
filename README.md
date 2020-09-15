@@ -1,5 +1,7 @@
 # Tictactoe
 
+![image](https://user-images.githubusercontent.com/865203/93250809-5816d080-f761-11ea-83c9-eed12fb35d67.png)
+
 To start your Phoenix server:
 
   * Install dependencies with `mix deps.get`
