@@ -29,8 +29,7 @@ defmodule Tictactoe.GameBoard do
   def get_position_from_coordinates(x, y) do
     key = :"#{x}_#{y}"
 
-    # If it's a valid position
-    if Map.has_key?(%GameBoard{}, key) do
+    if is_valid_position?(key) do
       key
     else
       raise ArgumentError, message: "Coordinates do not map to a valid position"
@@ -39,14 +38,30 @@ defmodule Tictactoe.GameBoard do
     key
   end
 
-  @spec has_move_here?(%GameBoard{}, number, number) :: boolean
-  def has_move_here?(%GameBoard{} = board, x_pos, y_pos) do
-    pos = get_position_from_coordinates(x_pos, y_pos)
-    # We know the pos has to be a valid board position,
-    # but defaulting missing keys to "" this is just in case
-    Map.get(board, pos, "") != ""
+  @spec is_valid_position?(atom) :: boolean
+  def is_valid_position?(position) when is_atom(position) do
+    Map.has_key?(%GameBoard{}, position)
   end
 
+  @doc """
+  Is there a non-empty move at this position already?
+  """
+  @spec has_move_here?(%GameBoard{}, number, number) :: boolean
+  def has_move_here?(%GameBoard{} = board, x_pos, y_pos)
+      when is_number(x_pos) and is_number(y_pos) do
+    has_move_here?(board, get_position_from_coordinates(x_pos, y_pos))
+  end
+
+  @spec has_move_here?(%GameBoard{}, atom) :: boolean
+  def has_move_here?(%GameBoard{} = board, position) when is_atom(position) do
+    # We know the pos has to be a valid board position,
+    # but defaulting missing keys to "" this is just in case
+    Map.get(board, position, "") != ""
+  end
+
+  @doc """
+  Get the character/move located at a given position
+  """
   @spec get_move(%GameBoard{}, number, number) :: binary
   def get_move(%GameBoard{} = board, x_pos, y_pos) do
     position = get_position_from_coordinates(x_pos, y_pos)

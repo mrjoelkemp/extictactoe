@@ -7,8 +7,7 @@ defmodule Tictactoe.GameClient do
 
   require Logger
   alias Tictactoe.Game
-  alias Tictactoe.Game.{Player, WinState}
-  alias Tictactoe.GameBoard
+  alias Tictactoe.Game.{Player}
   alias Tictactoe.PubSub
 
   @doc """
@@ -34,43 +33,12 @@ defmodule Tictactoe.GameClient do
     end
   end
 
-  @spec move(pid, %Player{}, binary) :: :ok
-  def move(game_pid, player, position) when is_binary(position) do
-    move(game_pid, player, String.to_atom(position))
-  end
+  def move(game_pid, player, position) when is_binary(position),
+    do: move(game_pid, player, String.to_atom(position))
 
   @spec move(pid, %Player{}, atom()) :: :ok
   def move(game_pid, player, position) when is_atom(position) do
-    Agent.update(game_pid, fn %Game{board: board, complete?: game_complete?} = state ->
-      cond do
-        game_complete? ->
-          Logger.debug("Game is already complete")
-          state
-
-        Map.has_key?(board, position) == false ->
-          Logger.info("Illegal move position: #{inspect(position)}")
-          state
-
-        player.character == "" ->
-          Logger.info("Player #{inspect(player.number)} does not have a character set")
-          state
-
-        true ->
-          new_board = Map.put(board, position, player.character)
-          complete? = GameBoard.complete?(new_board)
-
-          new_game_state = %Game{state | board: new_board, complete?: complete?}
-
-          win_state =
-            if complete? do
-              Game.get_win_state(new_game_state)
-            else
-              %WinState{}
-            end
-
-          Map.put(new_game_state, :win_state, win_state)
-      end
-    end)
+    Agent.update(game_pid, fn game -> Game.move(game, player, position) end)
   end
 
   def notify_others(game_pid) do
@@ -111,7 +79,6 @@ defmodule Tictactoe.GameClient do
 
     Agent.update(game_pid, fn _ -> updated_game end)
     notify_others(game_pid)
-    :ok
   end
 
   @doc """
@@ -125,24 +92,11 @@ defmodule Tictactoe.GameClient do
 
     Agent.update(game_pid, fn _ -> updated_game end)
     notify_others(game_pid)
-    :ok
   end
 
-  @doc """
-  Check if the game is complete
-
-  TODO: this might not be desirable since we set the completion state
-  on the winning move
-  """
+  @spec complete?(pid) :: boolean
   def complete?(game_pid) do
-    get_board(game_pid)
-    |> GameBoard.complete?()
-  end
-
-  @doc """
-  Get the game's board
-  """
-  def get_board(game_pid) do
-    Agent.get(game_pid, fn %Game{board: board} -> board end)
+    game = get_game(game_pid)
+    game.complete?
   end
 end

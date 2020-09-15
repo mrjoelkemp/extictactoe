@@ -13,7 +13,13 @@
   <div class="container">
     <div class="has-text-centered">
       <%= if @game.complete? do %>
-        <p><%= if you_won?(@game, @player), do: "You won!!", else: "You Lost :("%></p>
+        <p><%= if Game.did_I_win?(@game, @player), do: "You won!!", else: "You Lost :("%></p>
+      <% else %>
+        <%= if Game.is_my_turn?(@game, @player) do %>
+          <p> It's your turn </p>
+        <% else %>
+          <p> Waiting for the other player to move... </p>
+        <% end %>
       <% end %>
     </div>
 
@@ -32,9 +38,9 @@
                   >
                     <button
                       phx-click="game_move"
-                      value="<%= x %>_<%= y %>"
+                      value = <%= GameBoard.get_position_from_coordinates(x, y) %>
                       class="button"
-                      <%= if @game != %Game{} and GameBoard.has_move_here?(@game.board, x, y) or not your_turn?(@socket), do: "disabled" %>
+                      <%= if @game != %Game{} and GameBoard.has_move_here?(@game.board, x, y) or not Game.is_my_turn?(@game, @player), do: "disabled" %>
                     >
                       <%= GameBoard.get_move(@game.board, x, y) %>
                     </button>

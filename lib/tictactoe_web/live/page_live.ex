@@ -74,6 +74,8 @@ defmodule TictactoeWeb.PageLive do
     player = socket.assigns.player
     game_pid = socket.assigns.game_pid
 
+    # We don't just pull the game and mutate that because that
+    # wouldn't persist the actions against the source of truth
     if not GameClient.complete?(game_pid) do
       GameClient.move(game_pid, player, position)
       GameClient.notify_others(game_pid)
@@ -114,9 +116,5 @@ defmodule TictactoeWeb.PageLive do
 
     # TODO: Replace this when we have the state machine that dictates whose turn it is
     true
-  end
-
-  def you_won?(%Game{} = game, %Player{} = player) do
-    game.win_state.player == player
   end
 end

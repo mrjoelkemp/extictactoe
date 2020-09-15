@@ -5,6 +5,10 @@ defmodule Tictactoe.Game do
   use Agent
   alias Tictactoe.GameBoard
   alias __MODULE__
+  require Logger
+
+  @x "X"
+  @o "O"
 
   defmodule Player do
     defstruct number: nil, character: ""
@@ -21,23 +25,15 @@ defmodule Tictactoe.Game do
             player_lookup: %{},
             board: %GameBoard{},
             complete?: false,
-            turn: nil,
-            state: "",
+            turn: @x,
             win_state: struct(WinState)
-
-  @x "X"
-  @o "O"
-
-  def x, do: @x
-  def o, do: @o
 
   def start_link(_) do
     Agent.start_link(
       fn ->
         %Game{
           # TODO: Make this dynamic
-          id: "123",
-          state: "waiting_for_players"
+          id: "123"
         }
       end,
       # TODO: When we support multiple games, remove this singleton
@@ -96,18 +92,18 @@ defmodule Tictactoe.Game do
   defp get_available_character(%Game{} = game) do
     players = get_player_list(game)
 
-    x_taken? = any_players_have_this_character?(players, Game.x())
-    o_taken? = any_players_have_this_character?(players, Game.o())
+    x_taken? = any_players_have_this_character?(players, @x)
+    o_taken? = any_players_have_this_character?(players, @o)
 
     cond do
       x_taken? && o_taken? ->
         {:error, "No other available characters"}
 
       x_taken? ->
-        {:ok, Game.o()}
+        {:ok, @o}
 
       true ->
-        {:ok, Game.x()}
+        {:ok, @x}
     end
   end
 
@@ -142,12 +138,6 @@ defmodule Tictactoe.Game do
     else
       false
     end
-  end
-
-  @spec complete?(%Game{}) :: boolean
-  def complete?(%Game{} = game) do
-    game.board
-    |> GameBoard.complete?()
   end
 
   defp add_players(%Game{} = game, player_ids) when is_list(player_ids) do
@@ -195,5 +185,60 @@ defmodule Tictactoe.Game do
       player: winning_player,
       moves_lookup: moves_lookup
     }
+  end
+
+  @doc """
+  Wait, did I WIN?!
+  """
+  @spec did_I_win?(%Game{}, %Player{}) :: boolean
+  def did_I_win?(%Game{} = game, %Player{} = player) do
+    game.win_state.player == player
+  end
+
+  @spec is_my_turn?(%Game{}, %Player{}) :: boolean
+  def is_my_turn?(%Game{} = game, %Player{} = player) do
+    player.character == game.turn
+  end
+
+  @spec move(%Game{}, %Player{}, atom) :: %Game{}
+  def move(%Game{} = game, %Player{} = player, position) when is_atom(position) do
+    cond do
+      game.complete? ->
+        Logger.debug("Game is already complete")
+        game
+
+      GameBoard.has_move_here?(game.board, position) == true ->
+        Logger.debug("This position has already been played")
+        game
+
+      GameBoard.is_valid_position?(position) == false ->
+        Logger.debug("Invalid position location")
+        game
+
+      player.character == "" ->
+        Logger.info("Player #{inspect(player.number)} does not have a character set")
+        game
+
+      true ->
+        new_board = Map.put(game.board, position, player.character)
+        complete? = GameBoard.complete?(new_board)
+        next_turn = if player.character == @x, do: @o, else: @x
+
+        new_game_state = %Game{
+          game
+          | board: new_board,
+            complete?: complete?,
+            turn: next_turn
+        }
+
+        win_state =
+          if complete? do
+            get_win_state(new_game_state)
+          else
+            %WinState{}
+          end
+
+        Map.put(new_game_state, :win_state, win_state)
+    end
   end
 end
