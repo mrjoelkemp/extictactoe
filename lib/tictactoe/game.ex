@@ -146,7 +146,11 @@ defmodule Tictactoe.Game do
 
   @spec reset(%Game{}) :: %Game{}
   def reset(%Game{} = game) do
-    player_ids = Map.keys(game.player_lookup)
+    player_ids =
+      game.player_lookup
+      |> Map.keys()
+      # We want to randomize who goes first
+      |> Enum.shuffle()
 
     %Game{
       # You could alternatively connect the same players to a new game id

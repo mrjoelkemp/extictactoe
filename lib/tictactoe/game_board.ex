@@ -208,7 +208,7 @@ defmodule Tictactoe.GameBoard do
     |> Enum.map(fn index -> :"#{index}_#{index}" end)
   end
 
-  # This looks at the 0_3, 1_1, and 3_0 positions (looks like a forward slash)
+  # This looks at the 0_2, 1_1, and 2_0 positions (looks like a forward slash)
   @spec has_winning_forward_slash_diagonal?(%GameBoard{}) :: boolean
   defp has_winning_forward_slash_diagonal?(board) do
     get_forward_slash_diagonal_positions()
@@ -218,7 +218,7 @@ defmodule Tictactoe.GameBoard do
 
   @spec get_forward_slash_diagonal_positions :: [atom]
   defp get_forward_slash_diagonal_positions() do
-    [:"0_3", :"1_1", :"3_0"]
+    [:"0_2", :"1_1", :"2_0"]
   end
 
   @spec is_draw?(%GameBoard{}) :: boolean

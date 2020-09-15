@@ -14,8 +14,9 @@ defmodule TictactoeWeb.PageLive do
     # TODO: Eventually, we should just fetch the game by id
     game_pid = Process.whereis(Tictactoe.Game)
 
+    %{"_csrf_token" => session_id} = session
+
     if connected?(socket) do
-      %{"_csrf_token" => session_id} = session
       IO.puts("Session id: #{session_id}")
       IO.puts("Game State: #{inspect(GameClient.get_game(game_pid))}")
 
@@ -27,6 +28,7 @@ defmodule TictactoeWeb.PageLive do
     {:ok,
      assign(socket,
        game_pid: game_pid,
+       player_id: session_id,
        game: GameClient.get_game(game_pid),
        player: %Player{}
      )}
@@ -60,10 +62,13 @@ defmodule TictactoeWeb.PageLive do
   end
 
   def handle_info(:game_updated, socket) do
+    game_pid = socket.assigns.game_pid
+
     {:noreply,
      assign(
        socket,
-       game: GameClient.get_game(socket.assigns.game_pid)
+       game: GameClient.get_game(game_pid),
+       player: GameClient.lookup_player(game_pid, socket.assigns.player_id)
      )}
   end
 
