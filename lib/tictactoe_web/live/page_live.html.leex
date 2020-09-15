@@ -13,7 +13,16 @@
   <div class="container">
     <div class="has-text-centered">
       <%= if @game.complete? do %>
-        <p><%= if Game.did_I_win?(@game, @player), do: "You won!!", else: "You Lost :("%></p>
+        <p>
+        <%= cond do %>
+        <% GameBoard.is_draw?(@game.board) -> %>
+          It's a draw. Good game!
+        <% Game.did_I_win?(@game, @player) -> %>
+          You won!!
+        <% true -> %>
+          You lost :( Good game.
+        <% end %>
+        </p>
       <% else %>
         <%= if Game.is_my_turn?(@game, @player) do %>
           <p> It's your turn </p>

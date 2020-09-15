@@ -70,7 +70,7 @@ defmodule Tictactoe.GameBoard do
 
   @spec complete?(%GameBoard{}) :: boolean()
   def complete?(board) do
-    has_winner?(board)
+    has_winner?(board) or is_draw?(board)
   end
 
   def get_winning_state(board) do
@@ -219,5 +219,17 @@ defmodule Tictactoe.GameBoard do
   @spec get_forward_slash_diagonal_positions :: [atom]
   defp get_forward_slash_diagonal_positions() do
     [:"0_3", :"1_1", :"3_0"]
+  end
+
+  @spec is_draw?(%GameBoard{}) :: boolean
+  def is_draw?(%GameBoard{} = board) do
+    all_positions_played(board) and not has_winner?(board)
+  end
+
+  @spec all_positions_played(%GameBoard{}) :: boolean
+  def all_positions_played(%GameBoard{} = board) do
+    board
+    |> Map.values()
+    |> Enum.all?(&(&1 != ""))
   end
 end
