@@ -1,5 +1,7 @@
 # Tictactoe
 
+[![Run on Repl.it](https://repl.it/badge/github/mrjoelkemp/extictactoe)](https://repl.it/github/mrjoelkemp/extictactoe)
+
 To start your Phoenix server:
 
   * Install dependencies with `mix deps.get`
